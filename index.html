@@ -2,210 +2,156 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Royale Lite – Full Game</title>
+<title>Pixel Arena Duel</title>
 <style>
-body {margin:0;font-family:sans-serif;background: linear-gradient(#0b1a2b, #071023);color:#fff;}
-#menu {display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;}
-h1 {margin-bottom:20px;}
-#cardsAvailable, #deckSelected {display:flex;gap:10px;margin:10px 0;}
-.card {width:80px;height:100px;background:#1f2937;border-radius:8px;text-align:center;line-height:20px;cursor:pointer;transition: transform 0.2s;user-select:none;}
-.card:hover {transform: scale(1.1);background:#2a3a50;}
-.selected {border:2px solid #36b37e;}
-#description {background:#111;padding:10px;border-radius:6px;width:300px;text-align:left;margin-top:10px;}
-#gameMode {margin:15px;}
-.modeBtn {padding:10px 20px;margin:0 10px;background:#222;border:none;border-radius:6px;cursor:pointer;transition: background 0.2s;}
-.modeBtn:hover {background:#444;}
-.modeSelected {background:#36b37e;}
-#playBtn {padding:15px 30px;font-size:18px;background:#36b37e;border:none;border-radius:8px;cursor:pointer;opacity:0.5;}
-#playBtn.enabled {opacity:1;}
-#arena {display:none;position:relative;width:100%;height:400px;background:#0b1a2b;margin-bottom:10px;}
-.tower,.kingTower{position:absolute;width:72px;height:72px;background:#2a3140;border-radius:8px;text-align:center;line-height:72px;font-weight:bold;}
-.kingTower{width:96px;height:96px;line-height:96px;}
-#leftTowerTop{top:10px;left:10px;} #rightTowerTop{top:10px;right:10px;}
-#leftTowerBot{bottom:10px;left:10px;} #rightTowerBot{bottom:10px;right:10px;}
-#leftKingTower{left:10px;top:50%;transform:translateY(-50%);background:#3a2b40;}
-#rightKingTower{right:10px;top:50%;transform:translateY(-50%);background:#3a2b40;}
-.hpBar {position:absolute;top:-8px;left:0;width:100%;height:5px;background:red;border-radius:2px;}
-.hpFill {width:100%;height:100%;background:green;border-radius:2px;}
-.unit{position:absolute;width:40px;height:40px;background:#36b37e;border-radius:6px;text-align:center;line-height:40px;font-weight:bold;cursor:move;}
-#deckInGame{display:flex;gap:5px;margin-bottom:10px;}
-#hud{margin-bottom:10px;}
-#resetBtn{padding:10px 20px;margin-top:10px;background:#36b37e;border:none;border-radius:6px;cursor:pointer;}
+body {margin:0;font-family:sans-serif;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;}
+#menu,#arenaContainer{width:100%;max-width:800px;text-align:center;margin-top:20px;}
+#arena {position:relative;width:800px;height:400px;background:#222;border:2px solid #555;}
+.unit{position:absolute;width:40px;height:40px;border-radius:4px;text-align:center;line-height:40px;font-weight:bold;cursor:move;}
+.tower{position:absolute;width:60px;height:60px;background:#555;text-align:center;line-height:60px;font-weight:bold;border-radius:6px;}
+.obstacle{position:absolute;width:60px;height:60px;background:#888;border-radius:4px;}
+.card{display:inline-block;width:80px;height:100px;background:#333;margin:5px;border-radius:6px;cursor:pointer;}
+.card.selected{border:2px solid #0f0;}
+#hud{margin-top:10px;}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.3/dist/peerjs.min.js"></script>
 </head>
 <body>
 
-<!-- Main Menu -->
 <div id="menu">
-<h1>Royale Lite</h1>
-<div><strong>Select 8 Cards:</strong></div>
+<h1>Pixel Arena Duel</h1>
+<input id="playerName" placeholder="Enter Your Name">
+<div>
+<h3>Select 3 Units:</h3>
 <div id="cardsAvailable"></div>
-<div><strong>Selected Deck:</strong></div>
-<div id="deckSelected"></div>
-<div id="description">Hover over a card to see its description.</div>
-<div id="gameMode">
-<button class="modeBtn" data-mode="Casual">Casual</button>
-<button class="modeBtn" data-mode="Ranked">Ranked</button>
 </div>
-<button id="playBtn">Play</button>
+<button id="hostBtn">Host Game</button>
+<button id="joinBtn">Join Game</button>
+<input id="peerIdInput" placeholder="Peer ID to join">
 </div>
 
-<!-- HUD -->
-<div id="hud" style="display:none;">
-Elixir: <span id="elixirVal">5</span> | Reward Points: <span id="points">0</span> | Rank: <span id="rank">Bronze 0</span>
+<div id="arenaContainer" style="display:none;">
+<div id="hud">Energy: <span id="energyVal">5</span></div>
+<div id="arena"></div>
+<button id="resetBtn">Return to Menu</button>
 </div>
 
-<!-- Deck in Game -->
-<div id="deckInGame"></div>
-
-<!-- Arena -->
-<div id="arena">
-  <div class="tower" id="leftTowerTop">LT<div class="hpBar"><div class="hpFill"></div></div></div>
-  <div class="tower" id="rightTowerTop">RT<div class="hpBar"><div class="hpFill"></div></div></div>
-  <div class="tower" id="leftTowerBot">LB<div class="hpBar"><div class="hpFill"></div></div></div>
-  <div class="tower" id="rightTowerBot">RB<div class="hpBar"><div class="hpFill"></div></div></div>
-  <div class="kingTower" id="leftKingTower">LK<div class="hpBar"><div class="hpFill"></div></div></div>
-  <div class="kingTower" id="rightKingTower">RK<div class="hpBar"><div class="hpFill"></div></div></div>
-</div>
-
-<button id="resetBtn" style="display:none;">Return to Menu</button>
-
-<!-- Multiplayer -->
-<div id="multiplayer">
-<h3>PeerJS Multiplayer</h3>
-Your ID: <input id="myId" readonly>
-<button id="generateId">Generate ID</button><br>
-Connect to Peer: <input id="peerId"><button id="connectPeer">Connect</button>
-<div id="log" style="height:100px;overflow:auto;background:#111;margin-top:5px;padding:2px;"></div>
-</div>
-
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 <script>
-// -------------------- Cards --------------------
-const allCards = [
-{name:"Spear", hp:80, atk:30, spd:40, cost:2, desc:"Fast melee unit with moderate damage."},
-{name:"Archer", hp:60, atk:25, spd:55, cost:3, desc:"Ranged attacker, targets enemies from afar."},
-{name:"Giant", hp:420, atk:70, spd:18, cost:6, desc:"Heavy tank, targets buildings primarily."},
-{name:"Knight", hp:200, atk:50, spd:25, cost:4, desc:"Balanced melee fighter."},
-{name:"Mage", hp:100, atk:60, spd:30, cost:5, desc:"Area damage spellcaster."},
-{name:"Dragon", hp:600, atk:90, spd:15, cost:8, desc:"Flying unit, high HP and damage."},
-{name:"Bomber", hp:120, atk:70, spd:20, cost:4, desc:"Throws bombs, deals area damage."},
-{name:"MiniArcher", hp:50, atk:20, spd:60, cost:2, desc:"Cheap ranged unit, very fast."}
+// -------------------- Unit Cards --------------------
+const allCards=[
+{name:"Tank",hp:200,atk:20,spd:10,color:"#0f0"},
+{name:"Shooter",hp:80,atk:15,spd:20,color:"#f00"},
+{name:"Healer",hp:50,atk:0,spd:15,color:"#00f"}
 ];
 
-let selectedDeck=[], selectedMode=null;
-const cardsAvailableDiv = document.getElementById("cardsAvailable");
-const deckSelectedDiv = document.getElementById("deckSelected");
-const descriptionDiv = document.getElementById("description");
-const playBtn = document.getElementById("playBtn");
-
-// Populate available cards
+let selectedDeck=[];
+const cardsAvailableDiv=document.getElementById("cardsAvailable");
 allCards.forEach(c=>{
-  let cardDiv = document.createElement("div");
-  cardDiv.className="card";
-  cardDiv.innerHTML = c.name + "<br>Cost: "+c.cost;
-  cardDiv.onmouseenter = ()=> descriptionDiv.innerText=c.desc;
-  cardDiv.onmouseleave = ()=> descriptionDiv.innerText="Hover over a card to see its description.";
-  cardDiv.onclick = ()=>{
-    if(selectedDeck.includes(c)) selectedDeck=selectedDeck.filter(x=>x!==c);
-    else if(selectedDeck.length<8) selectedDeck.push(c);
-    updateDeckUI();
-    updatePlayBtn();
+  let div=document.createElement("div");
+  div.className="card";
+  div.style.background=c.color;
+  div.innerHTML=c.name;
+  div.onclick=()=>{
+    if(selectedDeck.includes(c)){selectedDeck=selectedDeck.filter(u=>u!==c);div.classList.remove("selected");}
+    else if(selectedDeck.length<3){selectedDeck.push(c);div.classList.add("selected");}
   };
-  cardsAvailableDiv.appendChild(cardDiv);
+  cardsAvailableDiv.appendChild(div);
 });
 
-function updateDeckUI(){
-  deckSelectedDiv.innerHTML="";
-  selectedDeck.forEach(c=>{
-    let div = document.createElement("div");
-    div.className="card selected";
-    div.innerHTML = c.name+"<br>Cost: "+c.cost;
-    deckSelectedDiv.appendChild(div);
+// -------------------- Multiplayer Setup --------------------
+let peer, conn;
+const playerNameInput=document.getElementById("playerName");
+document.getElementById("hostBtn").onclick=()=>{
+  peer=new Peer();
+  peer.on('open', id=>{
+    alert("Hosting! Your Peer ID: "+id);
+    setupGame(true);
   });
-}
-
-// Game mode buttons
-document.querySelectorAll(".modeBtn").forEach(btn=>{
-  btn.onclick=()=>{
-    selectedMode = btn.dataset.mode;
-    document.querySelectorAll(".modeBtn").forEach(b=>b.classList.remove("modeSelected"));
-    btn.classList.add("modeSelected");
-    updatePlayBtn();
-  };
-});
-
-function updatePlayBtn(){
-  if(selectedDeck.length===8 && selectedMode) playBtn.classList.add("enabled");
-  else playBtn.classList.remove("enabled");
-}
-
-// -------------------- Game Start --------------------
-playBtn.onclick=()=>{
-  if(selectedDeck.length===8 && selectedMode){
-    document.getElementById("menu").style.display="none";
-    document.getElementById("arena").style.display="block";
-    document.getElementById("hud").style.display="block";
-    document.getElementById("deckInGame").style.display="flex";
-    document.getElementById("resetBtn").style.display="block";
-    renderDeckInGame();
-    initGame();
-  }
-};
-
-document.getElementById("resetBtn").onclick=()=>{
-  location.reload();
-};
-
-// -------------------- Arena & Towers --------------------
-const towers = {
-  leftTop: {hp:500,maxHp:500,element: document.getElementById('leftTowerTop')},
-  rightTop: {hp:500,maxHp:500,element: document.getElementById('rightTowerTop')},
-  leftBot: {hp:500,maxHp:500,element: document.getElementById('leftTowerBot')},
-  rightBot: {hp:500,maxHp:500,element: document.getElementById('rightTowerBot')},
-  leftKing: {hp:1500,maxHp:1500,element: document.getElementById('leftKingTower'),canBeAttacked:false},
-  rightKing: {hp:1500,maxHp:1500,element: document.getElementById('rightKingTower'),canBeAttacked:false}
-};
-
-function damageTower(towerObj,amount){
-  towerObj.hp -= amount;
-  if(towerObj.hp<0) towerObj.hp=0;
-  towerObj.element.querySelector('.hpFill').style.width = (towerObj.hp/towerObj.maxHp*100)+'%';
-  checkKingTowerUnlocks();
-}
-
-function checkKingTowerUnlocks(){
-  if(towers.leftTop.hp===0 || towers.leftBot.hp===0) towers.leftKing.canBeAttacked=true;
-  if(towers.rightTop.hp===0 || towers.rightBot.hp===0) towers.rightKing.canBeAttacked=true;
-}
-
-// -------------------- Deck In-Game --------------------
-function renderDeckInGame(){
-  const deckDiv = document.getElementById("deckInGame");
-  deckDiv.innerHTML="";
-  selectedDeck.forEach(c=>{
-    let card=document.createElement("div");
-    card.className="card";
-    card.innerHTML = c.name+"<br>Cost:"+c.cost;
-    card.draggable=true;
-    card.ondragstart=e=>e.dataTransfer.setData("text/plain",c.name);
-    deckDiv.appendChild(card);
+  peer.on('connection', c=>{
+    conn=c;
+    conn.on('data', handleData);
   });
-}
+};
+document.getElementById("joinBtn").onclick=()=>{
+  peer=new Peer();
+  const peerId=document.getElementById("peerIdInput").value;
+  conn=peer.connect(peerId);
+  conn.on('open', ()=>{setupGame(false);});
+  conn.on('data', handleData);
+};
 
-// -------------------- Game State --------------------
-let state={units:[],elixir:5,points:0,rankPoints:0,running:true};
+// -------------------- Game --------------------
 const arena=document.getElementById("arena");
+let state={units:[],energy:5,running:true};
+let obstacles=[];
+
+function setupGame(isHost){
+  document.getElementById("menu").style.display="none";
+  document.getElementById("arenaContainer").style.display="block";
+  createObstacles();
+  setInterval(()=>{if(state.energy<10){state.energy+=1;document.getElementById("energyVal").innerText=state.energy;}},1000);
+}
+
+function createObstacles(){
+  obstacles.push({x:370,y:170,width:60,height:60});
+  obstacles.forEach(o=>{
+    let div=document.createElement("div");
+    div.className="obstacle";
+    div.style.left=o.x+"px"; div.style.top=o.y+"px";
+    arena.appendChild(div);
+  });
+}
+
+function spawnUnit(card,x,y,isRemote=false){
+  let div=document.createElement("div");
+  div.className="unit";
+  div.style.left=x+"px"; div.style.top=y+"px";
+  div.style.background=card.color;
+  div.innerText=card.name[0];
+  div.hp=card.hp; div.atk=card.atk; div.spd=card.spd;
+  arena.appendChild(div);
+  state.units.push(div);
+  moveUnit(div);
+  if(!isRemote && conn) conn.send({type:"spawn",card:card.name,x:x,y:y});
+}
+
+function moveUnit(unit){
+  const interval=setInterval(()=>{
+    if(!state.running) clearInterval(interval);
+    unit.style.left=parseFloat(unit.style.left)+unit.spd*0.3+"px";
+    if(parseFloat(unit.style.left)>arena.clientWidth) {unit.remove(); state.units=state.units.filter(u=>u!==unit);}
+  },50);
+}
+
+// -------------------- Drag to Spawn --------------------
 arena.ondragover=e=>e.preventDefault();
 arena.ondrop=e=>{
   e.preventDefault();
   let typeName=e.dataTransfer.getData("text/plain");
-  let card = allCards.find(c=>c.name===typeName);
-  if(!card || state.elixir<card.cost) return;
+  let card=allCards.find(c=>c.name===typeName);
+  if(!card||state.energy<2) return;
   let rect=arena.getBoundingClientRect();
-  spawnUnit(card, e.clientX-rect.left,e.clientY-rect.top);
-  state.elixir-=card.cost;
-  document.getElementById("elixirVal").innerText=Math.floor(state.elixir);
+  let dropX=e.clientX-rect.left, dropY=e.clientY-rect.top;
+  if(dropY>arena.clientHeight/2){spawnUnit(card,dropX,dropY);}
+  state.energy-=2; document.getElementById("energyVal").innerText=state.energy;
 };
 
-// -------------------- Units ----------------
+// Make deck draggable
+const deckDivs=document.querySelectorAll(".card");
+deckDivs.forEach((div,i)=>{
+  div.draggable=true;
+  div.ondragstart=e=>e.dataTransfer.setData("text/plain",selectedDeck[i].name);
+});
+
+// -------------------- Handle Incoming Data --------------------
+function handleData(data){
+  if(data.type==="spawn"){
+    const card=allCards.find(c=>c.name===data.card);
+    spawnUnit(card,data.x,data.y,true);
+  }
+}
+
+document.getElementById("resetBtn").onclick=()=>{location.reload();}
+</script>
+</body>
+</html>
