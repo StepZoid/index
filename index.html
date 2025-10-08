@@ -2,50 +2,76 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Royale Lite – Full Version</title>
+<title>Royale Lite – Full Game</title>
 <style>
-  body{margin:0;font-family:sans-serif;background:#071023;color:#fff;}
-  #arena{position:relative;width:100%;height:400px;background:#0b1a2b;margin-bottom:10px;}
-  .tower,.kingTower{position:absolute;width:72px;height:72px;background:#2a3140;border-radius:8px;text-align:center;line-height:72px;font-weight:bold;}
-  .kingTower{width:96px;height:96px;line-height:96px;}
-  #leftTowerTop{top:10px;left:10px;} #rightTowerTop{top:10px;right:10px;}
-  #leftTowerBot{bottom:10px;left:10px;} #rightTowerBot{bottom:10px;right:10px;}
-  #leftKingTower{left:10px;top:50%;transform:translateY(-50%);background:#3a2b40;}
-  #rightKingTower{right:10px;top:50%;transform:translateY(-50%);background:#3a2b40;}
-  .unit{position:absolute;width:40px;height:40px;background:#36b37e;border-radius:6px;text-align:center;line-height:40px;font-weight:bold;cursor:move;}
-  #deck{display:flex;gap:5px;margin-bottom:10px;}
-  .card{width:60px;height:60px;background:#1f2937;border-radius:6px;text-align:center;line-height:60px;cursor:pointer;}
-  #hud{margin-bottom:10px;}
-  #upgrades{margin-top:10px;}
-  .upgradeCard{display:inline-block;width:60px;height:60px;margin:2px;text-align:center;line-height:20px;background:#222;border-radius:6px;cursor:pointer;font-size:12px;}
+body {margin:0;font-family:sans-serif;background: linear-gradient(#0b1a2b, #071023);color:#fff;}
+#menu {display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;}
+h1 {margin-bottom:20px;}
+#cardsAvailable, #deckSelected {display:flex;gap:10px;margin:10px 0;}
+.card {width:80px;height:100px;background:#1f2937;border-radius:8px;text-align:center;line-height:20px;cursor:pointer;transition: transform 0.2s;user-select:none;}
+.card:hover {transform: scale(1.1);background:#2a3a50;}
+.selected {border:2px solid #36b37e;}
+#description {background:#111;padding:10px;border-radius:6px;width:300px;text-align:left;margin-top:10px;}
+#gameMode {margin:15px;}
+.modeBtn {padding:10px 20px;margin:0 10px;background:#222;border:none;border-radius:6px;cursor:pointer;transition: background 0.2s;}
+.modeBtn:hover {background:#444;}
+.modeSelected {background:#36b37e;}
+#playBtn {padding:15px 30px;font-size:18px;background:#36b37e;border:none;border-radius:8px;cursor:pointer;opacity:0.5;}
+#playBtn.enabled {opacity:1;}
+#arena {display:none;position:relative;width:100%;height:400px;background:#0b1a2b;margin-bottom:10px;}
+.tower,.kingTower{position:absolute;width:72px;height:72px;background:#2a3140;border-radius:8px;text-align:center;line-height:72px;font-weight:bold;}
+.kingTower{width:96px;height:96px;line-height:96px;}
+#leftTowerTop{top:10px;left:10px;} #rightTowerTop{top:10px;right:10px;}
+#leftTowerBot{bottom:10px;left:10px;} #rightTowerBot{bottom:10px;right:10px;}
+#leftKingTower{left:10px;top:50%;transform:translateY(-50%);background:#3a2b40;}
+#rightKingTower{right:10px;top:50%;transform:translateY(-50%);background:#3a2b40;}
+.hpBar {position:absolute;top:-8px;left:0;width:100%;height:5px;background:red;border-radius:2px;}
+.hpFill {width:100%;height:100%;background:green;border-radius:2px;}
+.unit{position:absolute;width:40px;height:40px;background:#36b37e;border-radius:6px;text-align:center;line-height:40px;font-weight:bold;cursor:move;}
+#deckInGame{display:flex;gap:5px;margin-bottom:10px;}
+#hud{margin-bottom:10px;}
+#resetBtn{padding:10px 20px;margin-top:10px;background:#36b37e;border:none;border-radius:6px;cursor:pointer;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.3/dist/peerjs.min.js"></script>
 </head>
 <body>
 
-<h2>Royale Lite – Full Version</h2>
-
-<div id="hud">
-  Elixir: <span id="elixirVal">5</span> | Reward Points: <span id="points">0</span> | Rank: <span id="rank">Bronze 0</span>
+<!-- Main Menu -->
+<div id="menu">
+<h1>Royale Lite</h1>
+<div><strong>Select 8 Cards:</strong></div>
+<div id="cardsAvailable"></div>
+<div><strong>Selected Deck:</strong></div>
+<div id="deckSelected"></div>
+<div id="description">Hover over a card to see its description.</div>
+<div id="gameMode">
+<button class="modeBtn" data-mode="Casual">Casual</button>
+<button class="modeBtn" data-mode="Ranked">Ranked</button>
+</div>
+<button id="playBtn">Play</button>
 </div>
 
-<div id="deck"></div>
+<!-- HUD -->
+<div id="hud" style="display:none;">
+Elixir: <span id="elixirVal">5</span> | Reward Points: <span id="points">0</span> | Rank: <span id="rank">Bronze 0</span>
+</div>
+
+<!-- Deck in Game -->
+<div id="deckInGame"></div>
+
+<!-- Arena -->
 <div id="arena">
-  <div class="tower" id="leftTowerTop">LT</div>
-  <div class="tower" id="rightTowerTop">RT</div>
-  <div class="tower" id="leftTowerBot">LB</div>
-  <div class="tower" id="rightTowerBot">RB</div>
-  <div class="kingTower" id="leftKingTower">LK</div>
-  <div class="kingTower" id="rightKingTower">RK</div>
+  <div class="tower" id="leftTowerTop">LT<div class="hpBar"><div class="hpFill"></div></div></div>
+  <div class="tower" id="rightTowerTop">RT<div class="hpBar"><div class="hpFill"></div></div></div>
+  <div class="tower" id="leftTowerBot">LB<div class="hpBar"><div class="hpFill"></div></div></div>
+  <div class="tower" id="rightTowerBot">RB<div class="hpBar"><div class="hpFill"></div></div></div>
+  <div class="kingTower" id="leftKingTower">LK<div class="hpBar"><div class="hpFill"></div></div></div>
+  <div class="kingTower" id="rightKingTower">RK<div class="hpBar"><div class="hpFill"></div></div></div>
 </div>
 
-<button id="resetBtn">Reset Game</button>
+<button id="resetBtn" style="display:none;">Return to Menu</button>
 
-<div id="upgrades">
-<h3>Card Upgrades</h3>
-<div id="upgradePanel"></div>
-</div>
-
+<!-- Multiplayer -->
 <div id="multiplayer">
 <h3>PeerJS Multiplayer</h3>
 Your ID: <input id="myId" readonly>
@@ -55,127 +81,131 @@ Connect to Peer: <input id="peerId"><button id="connectPeer">Connect</button>
 </div>
 
 <script>
-/* Basic Game State */
-let state={units:[],towers:{leftTop:1000,rightTop:1000,leftBot:1000,rightBot:1000,leftKing:2000,rightKing:2000},elixir:5,points:0,running:true,rankPoints:0};
-let deck=["spear","archer","giant","knight","mage","dragon","bomber","archer"];
-let cardLevels=JSON.parse(localStorage.getItem("cardLevels")||"{}");
+// -------------------- Cards --------------------
+const allCards = [
+{name:"Spear", hp:80, atk:30, spd:40, cost:2, desc:"Fast melee unit with moderate damage."},
+{name:"Archer", hp:60, atk:25, spd:55, cost:3, desc:"Ranged attacker, targets enemies from afar."},
+{name:"Giant", hp:420, atk:70, spd:18, cost:6, desc:"Heavy tank, targets buildings primarily."},
+{name:"Knight", hp:200, atk:50, spd:25, cost:4, desc:"Balanced melee fighter."},
+{name:"Mage", hp:100, atk:60, spd:30, cost:5, desc:"Area damage spellcaster."},
+{name:"Dragon", hp:600, atk:90, spd:15, cost:8, desc:"Flying unit, high HP and damage."},
+{name:"Bomber", hp:120, atk:70, spd:20, cost:4, desc:"Throws bombs, deals area damage."},
+{name:"MiniArcher", hp:50, atk:20, spd:60, cost:2, desc:"Cheap ranged unit, very fast."}
+];
 
-/* Unit Types with upgrade multipliers */
-const UNIT_TYPES={
-  spear:{hp:80,atk:30,spd:40,cost:2},
-  archer:{hp:60,atk:25,spd:55,cost:3},
-  giant:{hp:420,atk:70,spd:18,cost:6},
-  knight:{hp:200,atk:50,spd:25,cost:4},
-  mage:{hp:100,atk:60,spd:30,cost:5},
-  dragon:{hp:600,atk:90,spd:15,cost:8},
-  bomber:{hp:120,atk:70,spd:20,cost:4}
+let selectedDeck=[], selectedMode=null;
+const cardsAvailableDiv = document.getElementById("cardsAvailable");
+const deckSelectedDiv = document.getElementById("deckSelected");
+const descriptionDiv = document.getElementById("description");
+const playBtn = document.getElementById("playBtn");
+
+// Populate available cards
+allCards.forEach(c=>{
+  let cardDiv = document.createElement("div");
+  cardDiv.className="card";
+  cardDiv.innerHTML = c.name + "<br>Cost: "+c.cost;
+  cardDiv.onmouseenter = ()=> descriptionDiv.innerText=c.desc;
+  cardDiv.onmouseleave = ()=> descriptionDiv.innerText="Hover over a card to see its description.";
+  cardDiv.onclick = ()=>{
+    if(selectedDeck.includes(c)) selectedDeck=selectedDeck.filter(x=>x!==c);
+    else if(selectedDeck.length<8) selectedDeck.push(c);
+    updateDeckUI();
+    updatePlayBtn();
+  };
+  cardsAvailableDiv.appendChild(cardDiv);
+});
+
+function updateDeckUI(){
+  deckSelectedDiv.innerHTML="";
+  selectedDeck.forEach(c=>{
+    let div = document.createElement("div");
+    div.className="card selected";
+    div.innerHTML = c.name+"<br>Cost: "+c.cost;
+    deckSelectedDiv.appendChild(div);
+  });
+}
+
+// Game mode buttons
+document.querySelectorAll(".modeBtn").forEach(btn=>{
+  btn.onclick=()=>{
+    selectedMode = btn.dataset.mode;
+    document.querySelectorAll(".modeBtn").forEach(b=>b.classList.remove("modeSelected"));
+    btn.classList.add("modeSelected");
+    updatePlayBtn();
+  };
+});
+
+function updatePlayBtn(){
+  if(selectedDeck.length===8 && selectedMode) playBtn.classList.add("enabled");
+  else playBtn.classList.remove("enabled");
+}
+
+// -------------------- Game Start --------------------
+playBtn.onclick=()=>{
+  if(selectedDeck.length===8 && selectedMode){
+    document.getElementById("menu").style.display="none";
+    document.getElementById("arena").style.display="block";
+    document.getElementById("hud").style.display="block";
+    document.getElementById("deckInGame").style.display="flex";
+    document.getElementById("resetBtn").style.display="block";
+    renderDeckInGame();
+    initGame();
+  }
 };
 
-/* Init Deck UI */
-function setupDeck(){
-  let deckDiv=document.getElementById("deck"); deckDiv.innerHTML="";
-  deck.forEach(c=>{
+document.getElementById("resetBtn").onclick=()=>{
+  location.reload();
+};
+
+// -------------------- Arena & Towers --------------------
+const towers = {
+  leftTop: {hp:500,maxHp:500,element: document.getElementById('leftTowerTop')},
+  rightTop: {hp:500,maxHp:500,element: document.getElementById('rightTowerTop')},
+  leftBot: {hp:500,maxHp:500,element: document.getElementById('leftTowerBot')},
+  rightBot: {hp:500,maxHp:500,element: document.getElementById('rightTowerBot')},
+  leftKing: {hp:1500,maxHp:1500,element: document.getElementById('leftKingTower'),canBeAttacked:false},
+  rightKing: {hp:1500,maxHp:1500,element: document.getElementById('rightKingTower'),canBeAttacked:false}
+};
+
+function damageTower(towerObj,amount){
+  towerObj.hp -= amount;
+  if(towerObj.hp<0) towerObj.hp=0;
+  towerObj.element.querySelector('.hpFill').style.width = (towerObj.hp/towerObj.maxHp*100)+'%';
+  checkKingTowerUnlocks();
+}
+
+function checkKingTowerUnlocks(){
+  if(towers.leftTop.hp===0 || towers.leftBot.hp===0) towers.leftKing.canBeAttacked=true;
+  if(towers.rightTop.hp===0 || towers.rightBot.hp===0) towers.rightKing.canBeAttacked=true;
+}
+
+// -------------------- Deck In-Game --------------------
+function renderDeckInGame(){
+  const deckDiv = document.getElementById("deckInGame");
+  deckDiv.innerHTML="";
+  selectedDeck.forEach(c=>{
     let card=document.createElement("div");
-    card.className="card"; card.innerText=c.charAt(0).toUpperCase();
+    card.className="card";
+    card.innerHTML = c.name+"<br>Cost:"+c.cost;
     card.draggable=true;
-    card.ondragstart=e=>e.dataTransfer.setData("text/plain",c);
+    card.ondragstart=e=>e.dataTransfer.setData("text/plain",c.name);
     deckDiv.appendChild(card);
   });
 }
-setupDeck();
 
-/* Spawn Units */
+// -------------------- Game State --------------------
+let state={units:[],elixir:5,points:0,rankPoints:0,running:true};
 const arena=document.getElementById("arena");
 arena.ondragover=e=>e.preventDefault();
 arena.ondrop=e=>{
   e.preventDefault();
-  let type=e.dataTransfer.getData("text/plain");
-  if(state.elixir<UNIT_TYPES[type].cost)return;
+  let typeName=e.dataTransfer.getData("text/plain");
+  let card = allCards.find(c=>c.name===typeName);
+  if(!card || state.elixir<card.cost) return;
   let rect=arena.getBoundingClientRect();
-  spawnUnit(type,e.clientX-rect.left,e.clientY-rect.top);
-  state.elixir-=UNIT_TYPES[type].cost;
+  spawnUnit(card, e.clientX-rect.left,e.clientY-rect.top);
+  state.elixir-=card.cost;
   document.getElementById("elixirVal").innerText=Math.floor(state.elixir);
-  cycleDeck(type);
 };
 
-function spawnUnit(type,x,y){
-  let lvl=cardLevels[type]||1;
-  let u=UNIT_TYPES[type];
-  state.units.push({type,x,y,hp:u.hp*lvl,atk:u.atk*lvl,spd:u.spd});
-  renderUnits();
-}
-
-/* Render Units */
-function renderUnits(){
-  let udiv=document.getElementById("arena");
-  state.units.forEach(u=>{
-    if(!u.div){
-      let d=document.createElement("div"); d.className="unit"; d.innerText=u.type[0].toUpperCase();
-      arena.appendChild(d); u.div=d;
-    }
-    u.div.style.left=u.x+"px"; u.div.style.top=u.y+"px";
-  });
-}
-
-/* Cycle deck */
-function cycleDeck(type){
-  deck.push(deck.splice(deck.indexOf(type),1)[0]);
-  setupDeck();
-}
-
-/* Simple game loop */
-function loop(){
-  if(!state.running)return;
-  state.units.forEach(u=>{
-    u.x+=1; // move right
-  });
-  renderUnits();
-  requestAnimationFrame(loop);
-}
-loop();
-
-/* Upgrades */
-const upgradePanel=document.getElementById("upgradePanel");
-function setupUpgrades(){
-  upgradePanel.innerHTML="";
-  Object.keys(UNIT_TYPES).forEach(c=>{
-    let lvl=cardLevels[c]||1;
-    let div=document.createElement("div"); div.className="upgradeCard";
-    div.innerHTML=c.charAt(0).toUpperCase()+"<br>Lv "+lvl+"<br>Cost "+lvl*5;
-    div.onclick=()=>{if(state.points>=lvl*5){state.points-=lvl*5;cardLevels[c]=lvl+1;localStorage.setItem("cardLevels",JSON.stringify(cardLevels));setupUpgrades();document.getElementById("points").innerText=state.points;}}
-    upgradePanel.appendChild(div);
-  });
-}
-setupUpgrades();
-
-/* Reset */
-document.getElementById("resetBtn").onclick=()=>{
-  state.units=[];state.towers={leftTop:1000,rightTop:1000,leftBot:1000,rightBot:1000,leftKing:2000,rightKing:2000};
-  state.elixir=5;document.getElementById("elixirVal").innerText=state.elixir;renderUnits();
-}
-
-/* PeerJS Multiplayer */
-let peer=null,conn=null;
-document.getElementById("generateId").onclick=()=>{
-  peer=new Peer();peer.on('open',id=>document.getElementById("myId").value=id);
-  peer.on('connection',c=>{conn=c;c.on('data',handleData);});
-}
-document.getElementById("connectPeer").onclick=()=>{
-  conn=peer.connect(document.getElementById("peerId").value);conn.on('open',()=>{conn.on('data',handleData);});
-}
-function handleData(d){if(d.type==="spawn")spawnUnit(d.unit.type,d.unit.x,d.unit.y);}
-
-/* Ranked system */
-function updateRank(){
-  let p=state.rankPoints;
-  let tier="Bronze";
-  if(p>=100) tier="Silver";
-  if(p>=200) tier="Gold";
-  if(p>=400) tier="Platinum";
-  document.getElementById("rank").innerText=tier+" "+p;
-}
-updateRank();
-</script>
-
-</body>
-</html>
+// -------------------- Units ----------------
